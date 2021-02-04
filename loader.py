@@ -1,31 +1,36 @@
 import hashlib
 from os import path
 import requests
+from bs4 import BeautifulSoup
+
+CACHE_DIR = 'cache'
 
 
 class Loader(object):
 
-    CACHE_DIR = 'cache'
-
     def __init__(self):
         pass
 
-    def load(self, url, cache=True):
-        file_name = self.CACHE_DIR + '/' + hashlib.md5(str(url).encode()).hexdigest()
+    @classmethod
+    def load(cls, url, cache=True) -> BeautifulSoup:
+        file_name = CACHE_DIR + '/' + hashlib.md5(str(url).encode()).hexdigest()
 
-        if cache and self.__check(file_name):
-            content = self.__get(file_name)
+        if cache and cls.__check(file_name):
+            content = cls.__get(file_name)
         else:
-            content = self.__request(url)
+            content = cls.__request(url)
             if cache and content:
-                self.__save(content, file_name)
-        return content
+                cls.__save(content, file_name)
 
-    def __save(self, data, file):
+        return BeautifulSoup(str(content), "html.parser")
+
+    @classmethod
+    def __save(cls, data, file):
         with open(file, 'w') as f:
             f.write(data)
 
-    def __get(self, file):
+    @classmethod
+    def __get(cls, file):
         with open(file, 'r', encoding='utf-8') as f:
             content = f.read()
 
@@ -34,10 +39,12 @@ class Loader(object):
 
         return content or None
 
-    def __check(self, file):
+    @classmethod
+    def __check(cls, file):
         return path.exists(file)
 
-    def __request(self, url):
+    @classmethod
+    def __request(cls, url):
         r = requests.get(url)
         if r.ok:
             print(f'Page {url} is downloaded!')
